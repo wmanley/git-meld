@@ -47,7 +47,8 @@ while (my $arg = shift(@ARGV)) {
 
 # Get tree-ishes to compare
 if (scalar @ARGV == 0 || $ARGV[0] eq "--") {
-	die("No commits given to compare");
+	safe_cmd("meld ./");
+	exit(0);
 }
 
 my $commit1 = shift(@ARGV);
