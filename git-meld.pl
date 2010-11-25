@@ -23,6 +23,14 @@ sub safe_cmd {
 	return $output;
 }
 
+sub trim($)
+{
+	my $string = shift;
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+	return $string;
+}
+
 # Get options to be sent to diff
 while (my $arg = shift(@ARGV)) {
 	if ($arg =~ m/^-/ && $arg != "--") {
@@ -45,7 +53,7 @@ if (scalar @ARGV == 0 || $ARGV[0] eq "--") {
 my $commit1 = shift(@ARGV);
 
 if ($commit1 =~ m/^(.*)\.\.\.(.*)$/) {
-	$source_tree = safe_cmd("git merge-base $1 $2");
+	$source_tree = trim(safe_cmd("git merge-base $1 $2"));
 	$dest_tree = $2;
 	shift(@ARGV);
 }
@@ -70,13 +78,6 @@ if ($dest_tree eq "") {
 }
 
 # Can ignore any paths as git diff should take care of that for us
-sub trim($)
-{
-	my $string = shift;
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-	return $string;
-}
 
 # At this point we have parsed two commits and want to diff them
 my $git_dir = trim(safe_cmd("git rev-parse --show-cdup"));
