@@ -109,6 +109,9 @@ else {
 	safe_cmd("git archive $dest_tree $changed_files | tar -x -C $dest_dir");
 }
 
+system("chmod -R a-w $tmp_dir/*");
+
 safe_cmd("meld $source_dir $dest_dir");
 
-system("rm -R $tmp_dir");
+system("chmod -R u+w $tmp_dir/*");
+system("rm -Rf $tmp_dir");
