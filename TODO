@@ -1,0 +1,6 @@
+Allow diffing between arbitrary commits and the working directory and the
+staging area.
+
+Allow other directory diffing tools to be used such as kdiff3
+
+Extend to merges as well as diffs
