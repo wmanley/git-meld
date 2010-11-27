@@ -119,8 +119,6 @@ my $git_dir = trim(safe_cmd("git rev-parse --show-cdup"));
 if ($git_dir eq "") {
 	$git_dir = ".";
 }
-my $changed_files=safe_cmd("git diff --name-only $all_args");
-$changed_files =~ s/\n/ /g;
 
 my $tmp_dir=trim(safe_cmd("mktemp -d"));
 my $source_dir = "$tmp_dir/$source_tree";
@@ -134,13 +132,19 @@ else {
 
 system("mkdir $source_dir");
 system("mkdir $dest_dir");
-safe_cmd("git archive $source_tree $changed_files | tar -x -C $source_dir");
+
+my $src_changed_files=safe_cmd("git diff --diff-filter=DMTUXB --name-only $all_args");
+$src_changed_files =~ s/\n/ /g;
+safe_cmd("git archive $source_tree $src_changed_files | tar -x -C $source_dir");
+
+my $dest_changed_files=safe_cmd("git diff --diff-filter=ACMTUXB --name-only $all_args");
+$dest_changed_files =~ s/\n/ /g;
 if ($dest_tree eq "") {
 	die("Diff to working directory not yet implemented!");
-	safe_cmd("cp -l -R $changed_files $dest_dir");
+	safe_cmd("cp -l -R $dest_changed_files $dest_dir");
 }
 else {
-	safe_cmd("git archive $dest_tree $changed_files | tar -x -C $dest_dir");
+	safe_cmd("git archive $dest_tree $dest_changed_files | tar -x -C $dest_dir");
 }
 
 system("chmod -R a-w $tmp_dir/*");
