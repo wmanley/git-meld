@@ -18,12 +18,6 @@
 
 use strict;
 
-my $diff_opts = "";
-my $source_tree = "";
-my $dest_tree = "";
-
-my $all_args = "\"" . join("\" \"", @ARGV) . "\"";
-
 sub safe_cmd {
 	my $cmd = shift;
 	my $output = `$cmd`;
@@ -41,54 +35,84 @@ sub trim($)
 	return $string;
 }
 
-# Get options to be sent to diff
-while (my $arg = shift(@ARGV)) {
-	if ($arg =~ m/^-/ && $arg != "--") {
-		$diff_opts += " \"$arg\"";
-	}
-	else {
-		unshift(@ARGV, $arg);
-		last;
-	}
-	if ($arg == "--cached") {
-		die ("--cached option not supported");
-	}
+# The command line possibilities are:
+#     Compare HEAD to working directory:
+#         git meld [--options...] [--] [<paths>...]
+#
+#     Show the differences between source and the working directory
+#         git meld [--options...] <source> [--] [<paths>...]
+#
+#     Show the differences between source and dest:
+#         git meld [--options...] <source> <dest> [--] [<paths>...]
+#
+#     Same as above:
+#         git meld [--options...] <source>..<dest> [--] [<paths>...]
+#
+#     Show all the changes in source that have occured since it was branched
+#     from dest:
+#         git meld [--options...] <commit1>...<commit2> [--] [<paths>...]
+#
+# This function parses the command line and extracts source and dest and returns
+# them as two elements in a list.
+sub parse_cmd(@)
+{
+    my @args = @_;
+    my $diff_opts = "";
+    my $source_tree = "";
+    my $dest_tree = "";
+
+    # Get options to be sent to diff.  These all start with --
+    while (my $arg = shift(@args)) {
+	    if ($arg =~ m/^-/ && $arg != "--") {
+		    $diff_opts += " \"$arg\"";
+	    }
+	    else {
+		    unshift(@args, $arg);
+		    last;
+	    }
+	    if ($arg == "--cached") {
+		    die ("--cached option not supported");
+	    }
+    }
+
+    my $source_tree = "";
+    my $dest_tree = "";
+
+    # Get tree-ishes to compare
+    if (scalar @args != 0 && $args[0] ne "--") {
+        my $commit1 = shift(@args);
+
+        if ($commit1 =~ m/^(.*)\.\.\.(.*)$/) {
+	        $source_tree = trim(safe_cmd("git merge-base $1 $2"));
+	        $dest_tree = $2;
+	        shift(@args);
+        }
+        elsif ($commit1 =~ m/^(.*)\.\.(.*)$/) {
+	        $source_tree = $1;
+	        $dest_tree = $2;
+        }
+        else {
+	        $source_tree = $commit1;
+	        if (scalar @args == 0) {
+	        }
+	        else {
+		        my $commit2 = shift(@args);
+		        if ($commit2 ne "--") {
+			        $dest_tree = $commit2;
+		        }
+	        }
+        }
+    }
+    return ($source_tree, $dest_tree);
 }
 
-# Get tree-ishes to compare
-if (scalar @ARGV == 0 || $ARGV[0] eq "--") {
-	safe_cmd("meld ./");
-	exit(0);
-}
+my $all_args = "\"" . join("\" \"", @ARGV) . "\"";
+(my $source_tree, my $dest_tree) = parse_cmd(@ARGV);
 
-my $commit1 = shift(@ARGV);
-
-if ($commit1 =~ m/^(.*)\.\.\.(.*)$/) {
-	$source_tree = trim(safe_cmd("git merge-base $1 $2"));
-	$dest_tree = $2;
-	shift(@ARGV);
+if ($source_tree eq "" && $dest_tree eq "") {
+    safe_cmd("meld ./");
+    exit(0);
 }
-elsif ($commit1 =~ m/^(.*)\.\.(.*)$/) {
-	$source_tree = $1;
-	$dest_tree = $2;
-}
-else { 
-	$source_tree = $commit1;
-	if (scalar @ARGV == 0) {
-	}
-	else {
-		my $commit2 = shift(@ARGV);
-		if ($commit2 ne "--") {
-			$dest_tree = $commit2;
-		}
-	}
-}
-
-if ($dest_tree eq "") {
-	die("Diff to working directory not yet implemented!");
-}
-
-# Can ignore any paths as git diff should take care of that for us
 
 # At this point we have parsed two commits and want to diff them
 my $git_dir = trim(safe_cmd("git rev-parse --show-cdup"));
