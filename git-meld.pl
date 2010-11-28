@@ -171,13 +171,7 @@ sub link_files_working_dir($$) {
 # to the directory in the second argument
 sub copy_files_staging_area($$) {
     (my $filelist, my $outdir) = @_;
-    my $escaped_file_list = join(" ", map{shell_escape($_)} @$filelist);
-    my $filename_list = nul_seperated_string_to_list(safe_cmd("git checkout-index --temp -z -- $escaped_file_list"));
-    foreach my $filemap (@$filename_list) {
-        (my $tmp, my $actual) = split(/\t/, $filemap);
-        safe_system("mkdir", "-p", dirname("$outdir/$actual"));
-        safe_system("mv", $tmp, "$outdir/$actual");
-    }
+    safe_system("git", "checkout-index", "--prefix=$outdir/", "--", @$filelist);
 }
 
 my $all_args = join(" ", map{ shell_escape($_) } @ARGV);
