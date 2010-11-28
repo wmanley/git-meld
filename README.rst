@@ -9,8 +9,9 @@ SYNOPSIS
 DESCRIPTION
 ===========
     git meld is a git command that allows you to compare and edit treeishs
-    between revisions using meld. git meld is a frontend to git diff and accepts
-    the same options and arguments.
+    between revisions using meld or any other diff tool that supports directory
+    comparison.  git meld is a frontend to git diff and accepts the same options
+    and arguments.
 
     It is essentially an extended git-difftool for tools that support comparing
     directories rather than having git call the external tool for every file
@@ -47,6 +48,21 @@ INSTALLATION
         	meld = !/path/to/git-meld/git-meld.pl
     
     To your ~/.gitconfig
+
+CONFIGURATION
+=============
+    The following additional git configuration variables are available for
+    setting up git meld for using diff tools other than meld:
+    
+       treediff.tool
+           Controls which diff tool is used.
+
+       treediff.<tool>.path
+           Override the path for the given tool. This is useful in case your
+           tool is not in the PATH.
+
+       treediff.<tool>.cmd
+           Specify the command to invoke the specified diff tool.
 
 HOW IT WORKS
 ============

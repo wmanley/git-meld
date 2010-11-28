@@ -42,6 +42,14 @@ sub trim($)
 	return $string;
 }
 
+# Gets the value of the given config name from git if it exists, otherwise
+# returns the default value given as the second argument
+sub get_config_or_default($$) {
+    (my $key, my $default) = @_;
+    my $value = trim(`git config --get $key`);
+    return ($value eq "") ? $default : $value;
+}
+
 # The command line possibilities are:
 #     Compare staging area to working directory:
 #         git meld [--options...] [--] [<paths>...]
@@ -217,7 +225,10 @@ else {
 
 safe_system("chmod", "-R", "a-w", "$tmp_dir/");
 
-safe_system("meld", "$source_dir", "$dest_dir");
+my $tool = get_config_or_default("treediff.tool", "meld");
+my $cmd = get_config_or_default("treediff.$tool.cmd", $tool);
+my $path = get_config_or_default("treediff.$tool.path", "");
+safe_system("$path$cmd", "$source_dir", "$dest_dir");
 
 safe_system("chmod", "-R", "u+w", "$tmp_dir/");
 safe_system("rm", "-Rf", $tmp_dir);
