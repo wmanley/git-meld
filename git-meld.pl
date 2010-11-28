@@ -17,6 +17,7 @@
 ### Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
+use Cwd;
 
 sub safe_cmd {
 	my $cmd = shift;
@@ -25,6 +26,11 @@ sub safe_cmd {
 		die("$cmd failed with exit code $?");
 	}
 	return $output;
+}
+
+sub safe_system {
+	system(@_) == 0 || die ("system(" . @_ . ") failed!");
+	return 0;
 }
 
 sub trim($)
@@ -106,13 +112,46 @@ sub parse_cmd(@)
     return ($source_tree, $dest_tree);
 }
 
-my $all_args = "\"" . join("\" \"", @ARGV) . "\"";
-(my $source_tree, my $dest_tree) = parse_cmd(@ARGV);
-
-if ($source_tree eq "" && $dest_tree eq "") {
-    safe_cmd("meld ./");
-    exit(0);
+sub nul_seperated_string_to_list($) {
+    my $string = shift;
+    my @list = split(/\0/, $string);
+    return \@list;
 }
+
+sub shell_escape($) {
+    $_ = shift;
+    s/\\/\\\\/g;
+    s/\$/\\\$/g;
+    s/\`/\\\`/g;
+    return "\"$_\"";
+}
+
+sub copy_files_named_tree($$$) {
+    (my $tree, my $file_list, my $out_dir) = @_;
+    if (scalar @$file_list == 0) {
+        return;
+    }
+    my $escaped_file_list = join(" ", map{shell_escape($_)} @$file_list);
+    safe_cmd("git archive $tree $escaped_file_list | tar -x -C \"$out_dir\"");
+}
+
+sub copy_files_working_dir($$) {
+    (my $file_list, my $out_dir) = @_;
+    # Because we're diffing against the working directory we wish to create a
+    # tree of links in the dest folder mirroring that in the repo.
+    # TODO: Fix this so we don't have to loop over each filename somehow
+    foreach my $filename (@$file_list) {
+        safe_system("ln", "-s", cwd() . "/$filename", "$out_dir/$filename");
+    }
+}
+
+sub copy_files_staging_area($$) {
+    (my $filelist, my $outdir) = @_;
+    die("Comparison with staging area not implemented");
+}
+
+my $all_args = join(" ", map{ shell_escape($_) } @ARGV);
+(my $source_tree, my $dest_tree) = parse_cmd(@ARGV);
 
 # At this point we have parsed two commits and want to diff them
 my $git_dir = trim(safe_cmd("git rev-parse --show-cdup"));
@@ -121,35 +160,32 @@ if ($git_dir eq "") {
 }
 
 my $tmp_dir=trim(safe_cmd("mktemp -d"));
-my $source_dir = "$tmp_dir/$source_tree";
-my $dest_dir;
-if ($dest_tree eq "") {
-	$dest_dir = "$tmp_dir/working_dir";
+my $source_dir  = "$tmp_dir/" . (($source_tree eq "") ? "staging_area" : $source_tree);
+my $dest_dir = "$tmp_dir/" . (($dest_tree eq "") ? "working_dir" : $dest_tree);
+
+safe_system("mkdir $source_dir");
+safe_system("mkdir $dest_dir");
+
+my $src_changed_files = nul_seperated_string_to_list(safe_cmd("git diff -z --diff-filter=DMTUXB --name-only $all_args"));
+my $dest_changed_files = nul_seperated_string_to_list(safe_cmd("git diff -z --diff-filter=ACMTUXB --name-only $all_args"));
+
+if ($source_tree eq "") {
+    copy_files_staging_area($src_changed_files, $source_dir);
 }
 else {
-	$dest_dir = "$tmp_dir/$dest_tree";
+    copy_files_named_tree($source_tree, $src_changed_files, $source_dir);
 }
 
-system("mkdir $source_dir");
-system("mkdir $dest_dir");
-
-my $src_changed_files=safe_cmd("git diff --diff-filter=DMTUXB --name-only $all_args");
-$src_changed_files =~ s/\n/ /g;
-safe_cmd("git archive $source_tree $src_changed_files | tar -x -C $source_dir");
-
-my $dest_changed_files=safe_cmd("git diff --diff-filter=ACMTUXB --name-only $all_args");
-$dest_changed_files =~ s/\n/ /g;
 if ($dest_tree eq "") {
-	die("Diff to working directory not yet implemented!");
-	safe_cmd("cp -l -R $dest_changed_files $dest_dir");
+    copy_files_working_dir($dest_changed_files, $dest_dir);
 }
 else {
-	safe_cmd("git archive $dest_tree $dest_changed_files | tar -x -C $dest_dir");
+    copy_files_named_tree($dest_tree, $dest_changed_files, $dest_dir);
 }
 
-system("chmod -R a-w $tmp_dir/*");
+safe_system("chmod -R a-w $tmp_dir/*");
 
 safe_cmd("meld $source_dir $dest_dir");
 
-system("chmod -R u+w $tmp_dir/*");
-system("rm -Rf $tmp_dir");
+safe_system("chmod -R u+w $tmp_dir/*");
+safe_system("rm -Rf $tmp_dir");

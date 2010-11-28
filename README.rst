@@ -22,6 +22,9 @@ EXAMPLE
     Show the differences between HEAD and your working directory:
         $ git meld
     
+    Show the differences between two commits ago and the working directory:
+        $ git meld HEAD^^
+    
     Show the differences between the tips of branch master and branch topic
         $ git meld master..topic
     
@@ -43,10 +46,6 @@ INSTALLATION
 
 CAVEATS
 =======
-    git meld can display the differences between two commits or between HEAD and
-    the working directory, but not between an arbitrary commit and the working
-    directory.
-    
     There is currently no way of comparing anything to what is in the staging
     area
 
