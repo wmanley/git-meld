@@ -43,8 +43,11 @@ sub trim($)
 }
 
 # The command line possibilities are:
-#     Compare HEAD to working directory:
+#     Compare staging area to working directory:
 #         git meld [--options...] [--] [<paths>...]
+#
+#     Compare source to staging area (source defaults to HEAD):
+#         git meld [--options...] --cached <source> [--] [<paths>...]
 #
 #     Show the differences between source and the working directory
 #         git meld [--options...] <source> [--] [<paths>...]
@@ -125,6 +128,11 @@ sub shell_escape($) {
     return "\"$_\"";
 }
 
+# Copies files from a named tree into a directory
+# Parameters:
+#     tree      - A tree-ish
+#     file_list - A list ref giving a list of filenames to copy
+#     out_dir   - The directory under which this tree should be reconstructed
 sub copy_files_named_tree($$$) {
     (my $tree, my $file_list, my $out_dir) = @_;
     if (scalar @$file_list == 0) {
@@ -151,9 +159,17 @@ sub link_files_working_dir($$) {
     }
 }
 
+# Copies the files given as a list in the first argument from the staging area
+# to the directory in the second argument
 sub copy_files_staging_area($$) {
     (my $filelist, my $outdir) = @_;
-    die("Comparison with staging area not implemented");
+    my $escaped_file_list = join(" ", map{shell_escape($_)} @$filelist);
+    my $filename_list = nul_seperated_string_to_list(safe_cmd("git checkout-index --temp -z -- $escaped_file_list"));
+    foreach my $filemap (@$filename_list) {
+        (my $tmp, my $actual) = split(/\t/, $filemap);
+        safe_system("mkdir", "-p", dirname("$outdir/$actual"));
+        safe_system("mv", $tmp, "$outdir/$actual");
+    }
 }
 
 my $all_args = join(" ", map{ shell_escape($_) } @ARGV);

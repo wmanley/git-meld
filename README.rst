@@ -19,8 +19,12 @@ DESCRIPTION
 EXAMPLE
 =======
 
-    Show the differences between HEAD and your working directory:
+    Show the differences between the staging area and your working directory:
         $ git meld
+    
+    Show the differences between HEAD and the staging area (i.e. what would be
+    commited if you were commit now:
+        $ git meld --cached
     
     Show the differences between two commits ago and the working directory:
         $ git meld HEAD^^
@@ -43,11 +47,6 @@ INSTALLATION
         	meld = !/path/to/git-meld/git-meld.pl
     
     To your ~/.gitconfig
-
-CAVEATS
-=======
-    There is currently no way of comparing anything to what is in the staging
-    area
 
 HOW IT WORKS
 ============
