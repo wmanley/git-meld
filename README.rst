@@ -64,6 +64,11 @@ CONFIGURATION
        treediff.<tool>.cmd
            Specify the command to invoke the specified diff tool.
 
+CONTACT
+=======
+    git repo, bug tracker and wiki for git meld are available on github at
+    https://github.com/wmanley/git-meld
+
 HOW IT WORKS
 ============
     git meld uses "git diff --name-only" to extract the files that have changed
