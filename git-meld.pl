@@ -17,6 +17,7 @@
 ### Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
+use File::Basename;
 use Cwd;
 
 sub safe_cmd {
@@ -135,12 +136,19 @@ sub copy_files_named_tree($$$) {
     safe_cmd("git archive $tree $escaped_file_list | tar -x -C \"$out_dir\"");
 }
 
-sub copy_files_working_dir($$) {
+# Links the files given as a list in the first argument from the working
+# directory to the directory in the second argument
+#
+# These are linked rather than copied to allow the user to edit the files in the
+# diff viewer
+sub link_files_working_dir($$) {
     (my $file_list, my $out_dir) = @_;
     # Because we're diffing against the working directory we wish to create a
     # tree of links in the dest folder mirroring that in the repo.
     # TODO: Fix this so we don't have to loop over each filename somehow
     foreach my $filename (@$file_list) {
+        my $dir = $filename;
+        safe_system("mkdir", "-p", dirname("$out_dir/$filename"));
         safe_system("ln", "-s", cwd() . "/$filename", "$out_dir/$filename");
     }
 }
@@ -177,7 +185,7 @@ else {
 }
 
 if ($dest_tree eq "") {
-    copy_files_working_dir($dest_changed_files, $dest_dir);
+    link_files_working_dir($dest_changed_files, $dest_dir);
 }
 else {
     copy_files_named_tree($dest_tree, $dest_changed_files, $dest_dir);
