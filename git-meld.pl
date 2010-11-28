@@ -191,9 +191,9 @@ else {
     copy_files_named_tree($dest_tree, $dest_changed_files, $dest_dir);
 }
 
-safe_system("chmod -R a-w $tmp_dir/*");
+safe_system("chmod", "-R", "a-w", "$tmp_dir/");
 
-safe_cmd("meld $source_dir $dest_dir");
+safe_system("meld", "$source_dir", "$dest_dir");
 
-safe_system("chmod -R u+w $tmp_dir/*");
-safe_system("rm -Rf $tmp_dir");
+safe_system("chmod", "-R", "u+w", "$tmp_dir/");
+safe_system("rm", "-Rf", $tmp_dir);
