@@ -65,20 +65,18 @@ sub parse_cmd(@)
 {
     my @args = @_;
     my $diff_opts = "";
-    my $source_tree = "";
-    my $dest_tree = "";
+    my %opts;
 
     # Get options to be sent to diff.  These all start with --
     while (my $arg = shift(@args)) {
-	    if ($arg =~ m/^-/ && $arg != "--") {
+	    if ($arg =~ m/^-/ && $arg ne "--") {
+            $arg =~ m/^-+([^=]+)(=(.*))?$/;
+	        $opts{$1} = $3;
 		    $diff_opts += " \"$arg\"";
 	    }
 	    else {
 		    unshift(@args, $arg);
 		    last;
-	    }
-	    if ($arg == "--cached") {
-		    die ("--cached option not supported");
 	    }
     }
 
@@ -110,7 +108,7 @@ sub parse_cmd(@)
 	        }
         }
     }
-    return ($source_tree, $dest_tree);
+    return ($source_tree, $dest_tree, \%opts);
 }
 
 sub nul_seperated_string_to_list($) {
@@ -159,7 +157,14 @@ sub copy_files_staging_area($$) {
 }
 
 my $all_args = join(" ", map{ shell_escape($_) } @ARGV);
-(my $source_tree, my $dest_tree) = parse_cmd(@ARGV);
+(my $source_tree, my $dest_tree, my $opts) = parse_cmd(@ARGV);
+
+if (exists($opts->{"cached"}) || exists($opts->{"staged"})) {
+    ($dest_tree eq "") || die("Only one commit can be given with the option --cached.  You gave \"" . $dest_tree . "\"");
+    if ($source_tree eq "") {
+        $source_tree = "HEAD";
+    }
+}
 
 # At this point we have parsed two commits and want to diff them
 my $git_dir = trim(safe_cmd("git rev-parse --show-cdup"));
@@ -184,7 +189,10 @@ else {
     copy_files_named_tree($source_tree, $src_changed_files, $source_dir);
 }
 
-if ($dest_tree eq "") {
+if (exists($opts->{"cached"}) || exists($opts->{"staged"})) {
+    copy_files_staging_area($dest_changed_files, $dest_dir);
+}
+elsif ($dest_tree eq "") {
     link_files_working_dir($dest_changed_files, $dest_dir);
 }
 else {
