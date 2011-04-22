@@ -194,8 +194,8 @@ my $tmp_dir=trim(safe_cmd("mktemp -d"));
 my $source_dir  = "$tmp_dir/" . (($source_tree eq "") ? "staging_area" : $source_tree);
 my $dest_dir = "$tmp_dir/" . (($dest_tree eq "") ? "working_dir" : $dest_tree);
 
-safe_system("mkdir $source_dir");
-safe_system("mkdir $dest_dir");
+safe_system("mkdir -p $source_dir");
+safe_system("mkdir -p $dest_dir");
 
 my $src_changed_files = nul_seperated_string_to_list(safe_cmd("git diff -z --diff-filter=DMTUXB --name-only $all_args"));
 my $dest_changed_files = nul_seperated_string_to_list(safe_cmd("git diff -z --diff-filter=ACMTUXB --name-only $all_args"));
