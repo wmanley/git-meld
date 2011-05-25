@@ -190,7 +190,7 @@ if ($git_dir eq "") {
 	$git_dir = ".";
 }
 
-my $tmp_dir=trim(safe_cmd("mktemp -d"));
+my $tmp_dir=trim(safe_cmd("mktemp -d -t git-meld.XXXXXX"));
 my $source_dir  = "$tmp_dir/" . (($source_tree eq "") ? "staging_area" : $source_tree);
 my $dest_dir = "$tmp_dir/" . (($dest_tree eq "") ? "working_dir" : $dest_tree);
 
