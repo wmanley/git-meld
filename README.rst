@@ -15,7 +15,7 @@ DESCRIPTION
 
     It is essentially an extended git-difftool for tools that support comparing
     directories rather than having git call the external tool for every file
-    that has changed
+    that has changed.
 
 EXAMPLE
 =======
