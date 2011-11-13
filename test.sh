@@ -112,6 +112,18 @@ function that_git_meld_works_with_branches_with_slashes_in_their_names_handler {
     [ -z "$(ls -A $tree_b)" ] || die "$tree_b should be empty"
 }
 
+##### test 6
+function test_that_git_meld_works_when_not_invoked_from_root_of_repo {
+    mkdir moo
+    cd moo
+    "$git_meld" branch-1 branch-2
+}
+
+function that_git_meld_works_when_not_invoked_from_root_of_repo_handler {
+    assert_file_contents_equal_to "$tree_a/b" "b with some different content"
+    [ -z "$(ls -A $tree_b)" ] || die "$tree_b should be empty"
+}
+
 # If the variable $test_handler is not set this script should run through all
 # the tests.  The tests involve instructing git-meld to invoke this script
 # rather than meld itself with the $test_handler variable set so we can check if
