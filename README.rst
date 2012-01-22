@@ -24,7 +24,7 @@ EXAMPLE
         $ git meld
     
     Show the differences between HEAD and the staging area (i.e. what would be
-    commited if you were commit now:
+    commited if you were to commit now):
         $ git meld --cached
     
     Show the differences between two commits ago and the working directory:
