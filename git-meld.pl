@@ -68,7 +68,7 @@ sub get_config_or_default($$) {
 #
 #     Show all the changes in source that have occured since it was branched
 #     from dest:
-#         git meld [--options...] <commit1>...<commit2> [--] [<paths>...]
+#         git meld [--options...] <commit1>...[<commit2>] [--] [<paths>...]
 #
 # This function parses the command line and extracts source and dest and returns
 # them as two elements in a list.
@@ -99,9 +99,9 @@ sub parse_cmd(@)
         my $commit1 = shift(@args);
 
         if ($commit1 =~ m/^(.*)\.\.\.(.*)$/) {
-	        $source_tree = trim(safe_cmd("git merge-base $1 $2"));
-	        $dest_tree = $2;
-	        shift(@args);
+            my $branch_2 = $2 == "" ? "HEAD" : $2;
+            $source_tree = trim(safe_cmd("git merge-base $1 $branch_2"));
+            $dest_tree = $2;
         }
         elsif ($commit1 =~ m/^(.*)\.\.(.*)$/) {
 	        $source_tree = $1;

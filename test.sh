@@ -16,22 +16,43 @@ this_script=$(readlink -f $BASH_SOURCE)
 git_meld=$(dirname "$this_script")/git-meld.pl
 handler=$1
 
+# * Add a c      < *branch-2* |
+# |\
+# | * Add b
+# | |
+# | * Modify c   < master |
+# |\
+# | * Add b (modified)   < branch-1 |
+# |
+# * Local changes checked in to index but not committed
+# |
+# * Local uncommitted changes, not checked in to index
 function setup {
     export repo_dir=$(mktemp -d -t git-meld.XXXXXX)
     cd "$repo_dir"
 
     git init
+
+    # master
     echo "Some file" > a
-    git add a
-    git commit -m "Added some file"
+    echo "And another" > c
+    git add a c
+    git commit -m "Add a c"
+    git tag root
     echo "Another file" > b
     git add b
     git commit -m "Added another file"
-    git checkout -b branch-1 HEAD^
+    echo "Modify c" > c
+    git commit -am "Modify c"
+
+    # branch-1
+    git checkout -b branch-1 root
     echo "b with some different content" > b
     git add b
-    git commit -a -m "More changes"
-    git checkout -b branch-2 HEAD^
+    git commit -a -m "Add b (modified)"
+
+    # branch-2 (HEAD)
+    git checkout -b branch-2 root
     echo "An indexed file" > wtf
     git add wtf
     echo "And some changes to it" > wtf
@@ -122,6 +143,44 @@ function test_that_git_meld_works_when_not_invoked_from_root_of_repo {
 function that_git_meld_works_when_not_invoked_from_root_of_repo_handler {
     assert_file_contents_equal_to "$tree_a/b" "b with some different content"
     [ -z "$(ls -A $tree_b)" ] || die "$tree_b should be empty"
+}
+
+##### test 7
+function test_that_using_elipsis_between_two_revisions_uses_their_merge_base {
+    # Should behave the same as:
+    #      git meld $(git merge-base branch-1 master) master
+    # which is the same as 
+    #      git meld root master
+    "$git_meld" branch-1...master
+}
+
+function that_using_elipsis_between_two_revisions_uses_their_merge_base_handler {
+    [ -z $(ls --hide c $tree_a) ] || die "tree_a should be the same as root"
+    [ -z $(ls --hide b --hide c $tree_b) ] || die "tree_a should be the same as root"
+    assert_file_contents_equal_to "$tree_a/c" 'And another'
+    assert_file_contents_equal_to "$tree_b/b" 'Another file'
+    assert_file_contents_equal_to "$tree_b/c" 'Modify c'
+}
+
+##### test 8
+# Regression test for issue #4 - git meld master... fails
+function test_that_elipsis_with_no_second_revision_uses_merge_base_HEAD {
+    # Should behave the same as git meld root branch-1
+    git checkout branch-1 &>/dev/null
+    "$git_meld" master...
+}
+
+function that_elipsis_with_no_second_revision_uses_merge_base_HEAD_handler {
+    # The git diff man page says about the elipsis form of invocation:
+    # > You can omit any one of <commit>, which has the same effect as using
+    # > HEAD instead.
+    #
+    # Note: if either commit are omitted HEAD is used *and not* the working
+    #       directory as you might otherwise expect.
+    [ -z $(ls $tree_a) ] || die "There are no changes between root and here"
+    [ "$(ls $tree_b)" == "b" ] || die "$tree_b should only contain b"
+
+    assert_file_contents_equal_to "$tree_b/b" 'b with some different content'
 }
 
 # If the variable $test_handler is not set this script should run through all
