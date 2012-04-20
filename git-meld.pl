@@ -174,6 +174,12 @@ sub copy_files_staging_area($$) {
     safe_system("git", "checkout-index", "--prefix=$outdir/", "--", @$filelist);
 }
 
+sub is_folder_empty {
+    my $dirname = shift;
+    opendir(my $dh, $dirname) or die "Not a directory";
+    return scalar(grep { $_ ne "." && $_ ne ".." } readdir($dh)) == 0;
+}
+
 my $all_args = join(" ", map{ shell_escape($_) } @ARGV);
 (my $source_tree, my $dest_tree, my $opts) = parse_cmd(@ARGV);
 
@@ -222,7 +228,12 @@ safe_system("chmod", "-R", "a-w", "$tmp_dir/");
 my $tool = get_config_or_default("treediff.tool", "meld");
 my $cmd = get_config_or_default("treediff.$tool.cmd", $tool);
 my $path = get_config_or_default("treediff.$tool.path", "");
-safe_system("$path$cmd", "$source_dir", "$dest_dir");
+
+if (!is_folder_empty($source_dir) && !is_folder_empty($dest_dir)) {
+    safe_system("$path$cmd", "$source_dir", "$dest_dir");
+} else {
+    safe_system("echo", "no diff");
+}
 
 safe_system("chmod", "-R", "u+w", "$tmp_dir/");
 safe_system("rm", "-Rf", $tmp_dir);
