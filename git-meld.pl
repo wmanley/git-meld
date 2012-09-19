@@ -147,7 +147,7 @@ sub copy_files_named_tree($$$) {
         return;
     }
     my $escaped_file_list = join(" ", map{shell_escape($_)} @$file_list);
-    safe_cmd("cd \$(git rev-parse --show-toplevel) && git archive $tree $escaped_file_list | tar -x -C \"$out_dir\"");
+    safe_cmd("cd \"\$(git rev-parse --show-toplevel)\" && git archive $tree $escaped_file_list | tar -x -C \"$out_dir\"");
 }
 
 # Links the files given as a list in the first argument from the working
