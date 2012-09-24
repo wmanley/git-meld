@@ -28,7 +28,7 @@ handler=$1
 # |
 # * Local uncommitted changes, not checked in to index
 function setup {
-    export repo_dir=$(mktemp -d -t git-meld.XXXXXX)
+    export repo_dir=$(mktemp -d -t "git-meld XXXXXX")
     cd "$repo_dir"
 
     git init
@@ -84,7 +84,7 @@ function test_compare_index_to_working_dir {
 function compare_index_to_working_dir_handler {
     assert_file_contents_equal_to $tree_a/wtf "An indexed file"
     assert_file_contents_equal_to $tree_b/wtf "And some changes to it"
-    [ $(readlink -f $tree_b/wtf) == $(readlink -f $repo_dir/wtf) ] \
+    [ "$(readlink -f "$tree_b/wtf")" == "$(readlink -f "$repo_dir/wtf")" ] \
         || die "When comparing against the working tree symbolic links rather than copies should be created"
 }
 
@@ -94,9 +94,9 @@ function test_compare_HEAD_to_working_dir {
 }
 
 function compare_HEAD_to_working_dir_handler {
-    [ ! -e $tree_a/wtf ] || die "$tree_a/wtf is not in HEAD, so shouldn't be here"
-    assert_file_contents_equal_to $tree_b/wtf "And some changes to it"
-    [ $(readlink -f $tree_b/wtf) == $(readlink -f $repo_dir/wtf) ] \
+    [ ! -e "$tree_a/wtf" ] || die "$tree_a/wtf is not in HEAD, so shouldn't be here"
+    assert_file_contents_equal_to "$tree_b/wtf" "And some changes to it"
+    [ "$(readlink -f "$tree_b/wtf")" == "$(readlink -f "$repo_dir/wtf")" ] \
         || die "When comparing against the working tree symbolic links rather than copies should be created"
 }
 
@@ -182,6 +182,25 @@ function that_elipsis_with_no_second_revision_uses_merge_base_HEAD_handler {
 
     assert_file_contents_equal_to "$tree_b/b" 'b with some different content'
 }
+
+##### test 9
+# Regression test for issue #17
+function test_that_git_meld_works_with_spaces_in_dirnames {
+    # setup function changed. Temporary directory name now contains one white 
+    # space: mktemp -d -t "git-meld XXXXXX". So this function only consists in 
+    # run git meld on it to test if it works.
+    cd "$repo_dir"
+    "$git_meld" 
+}
+
+function that_git_meld_works_with_spaces_in_dirnames_handler {
+    # Similar to test 1
+    assert_file_contents_equal_to $tree_a/wtf "An indexed file"
+    assert_file_contents_equal_to $tree_b/wtf "And some changes to it"
+    [ "$(readlink -f "$tree_b/wtf")" == "$(readlink -f "$repo_dir/wtf")" ] \
+        || die "When comparing against the working tree symbolic links rather than copies should be created"
+}
+
 
 # If the variable $test_handler is not set this script should run through all
 # the tests.  The tests involve instructing git-meld to invoke this script
