@@ -40,7 +40,7 @@ EXAMPLE
 INSTALLATION
 ============
     Add a git alias to your gitconfig with:
-        $ git config --global alias.meld \!/path/to/git-meld/git-meld.pl
+        $ git config --global alias.meld \'\!/path/to/git-meld/git-meld.pl\'
 
     Alternatively add:
 
