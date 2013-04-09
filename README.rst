@@ -2,6 +2,8 @@
 git meld README
 ===============
 
+``git meld`` is **obsolete** since git 1.8 introduced ``git difftool``.
+
 SYNOPSIS
 ========
     git meld [options] <commit>{0,2} [--] [<path>...]
