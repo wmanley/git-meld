@@ -2,6 +2,8 @@
 git meld README
 ===============
 
+NOTE: ``git meld`` is obsolete since ``git difftool`` learnt the ``--dir-diff`` option in git 1.7.11.
+
 SYNOPSIS
 ========
     git meld [options] <commit>{0,2} [--] [<path>...]
