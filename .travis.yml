@@ -1,0 +1,3 @@
+language: perl
+script: ./test.sh
+install: true
