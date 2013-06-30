@@ -207,16 +207,18 @@ function that_git_meld_works_with_spaces_in_dirnames_handler {
 # rather than meld itself with the $test_handler variable set so we can check if
 # the appropriate environment would have been set up for meld.
 if [ -z "$test_handler" ]; then
+    [ "$1" == '-v' ] && verbosefile=/dev/stdout || verbosefile=/dev/null
+
     ## foreach test
     declare -F | cut -d' ' -f 3 | grep test_ | sed s/test_// |
     {
         while read line
         do
-            [ "$1" == '-v' ] && echo "Running test test_$line..."
-            setup &> /dev/null
+            echo "Running test test_$line..." >"$verbosefile" 2>&1
+            setup >"$verbosefile" 2>&1
             export test_handler=${line}_handler
             test_$line && echo "SUCCESS test_$line" || echo "FAILURE test_$line"
-            teardown &> /dev/null
+            teardown >"$verbosefile" 2>&1
         done
     }
 else
