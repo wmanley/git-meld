@@ -32,6 +32,8 @@ function setup {
     cd "$repo_dir"
 
     git init
+    git config user.name 'Tiny Testah'
+    git config user.email 'tiny.testah@git-meld.org'
 
     # master
     echo "Some file" > a
