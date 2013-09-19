@@ -22,6 +22,7 @@ use Cwd;
 
 sub safe_cmd {
 	my $cmd = shift;
+	#print("safe_cmd: $cmd\n");
 	my $output = `$cmd`;
 	if ($? != 0) {
 		die("$cmd failed with exit code $?");
@@ -30,6 +31,7 @@ sub safe_cmd {
 }
 
 sub safe_system {
+    #print("safe_system:" . join(" ", @_ ) . "\n");
 	system(@_) == 0 || die ("system(" . @_ . ") failed!");
 	return 0;
 }
@@ -197,6 +199,7 @@ if ($git_dir eq "") {
 }
 
 my $tmp_dir=trim(safe_cmd("mktemp -d -t git-meld.XXXXXX"));
+$tmp_dir =~ s/\/cygdrive//;
 my $source_dir  = "$tmp_dir/" . (($source_tree eq "") ? "staging_area" : $source_tree);
 my $dest_dir = "$tmp_dir/" . (($dest_tree eq "") ? "working_dir" : $dest_tree);
 
